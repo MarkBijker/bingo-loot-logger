@@ -3,19 +3,24 @@ package com.bingolootlogger;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ServerNpcLoot;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.ItemStack;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.util.Text;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @PluginDescriptor(
@@ -62,33 +67,41 @@ public class BingoLootLoggerPlugin extends Plugin
 	@Subscribe
 	public void onServerNpcLoot(ServerNpcLoot event)
 	{
-		sendGameLootMessage(event);
+		Collection<ItemStack> itemStack = getItemStack(event);
+		List<String> bingoItemList = Text.fromCSV(config.BingoItemList());
 
+		List<ItemStack> bingoItems = itemStack.stream()
+				.filter(item -> bingoItemList.contains(getItemName(item.getId())))
+				.collect(Collectors.toList());
+		if (!bingoItems.isEmpty()) sendBingoLootMessage(event, bingoItems);
 	}
 
-	private void sendGameLootMessage(ServerNpcLoot event) {
-		// NPC DATA
-		int npcId = event.getComposition().getId();
-		var name = event.getComposition().getName();
-		client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "You received loot from " + name + " (ID: " + npcId + ")", null);
+	private void sendBingoLootMessage(ServerNpcLoot event, List<ItemStack> bingoItems) {
+		String npcName = event.getComposition().getName();
 
-
-
-		// DROPPED ITEM DATA
-		event.getItems().forEach(item -> {
-			int itemId = item.getId();
-			int quantity = item.getQuantity();
-			String itemName = getItemName(itemId);
-			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "",
-					"lootname: <col=ff0000>" + itemName + "</col>" +
-							" value: <col=ff0000>" + itemManager.getItemPrice(itemId) + "</col>" +
-							" quantity: " + quantity +
-							" ID: " + itemId, null);
-		});
+		// TODO: Potentially add "M" or "K" abbreviations to the ItemPrice
+		for (ItemStack bingoItem : bingoItems) {
+			int bingoItemId = bingoItem.getId();
+			client.addChatMessage(
+					ChatMessageType.GAMEMESSAGE,
+					"",
+					"You received: <col=ff0000>" + getItemName(bingoItemId) +
+							"</col> from: <col=ff0000>" + npcName +
+							"</col> worth: <col=ff0000>" + getItemPrice(bingoItemId) +
+							"</col> gp",
+					null
+			);
+		}
 	}
-
+	private Collection<ItemStack> getItemStack(ServerNpcLoot event) {
+		return event.getItems();
+	}
+	private int getItemPrice(int itemId) {
+		return itemManager.getItemPrice(itemId);
+	}
 
 	public String getItemName(int itemId) {
 		return client.getItemDefinition(itemId).getName();
 	}
+
 }

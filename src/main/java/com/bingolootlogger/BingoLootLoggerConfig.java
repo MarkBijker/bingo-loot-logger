@@ -16,4 +16,14 @@ public interface BingoLootLoggerConfig extends Config
 	{
 		return "Hello";
 	}
+
+	@ConfigItem(
+			keyName = "BingoItemList",
+			name = "Bingo Item List",
+			description = "A list of items to log for Bingo"
+	)
+	default String BingoItemList()
+	{
+		return "";
+	}
 }
