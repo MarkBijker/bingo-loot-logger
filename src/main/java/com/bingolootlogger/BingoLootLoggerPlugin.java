@@ -11,7 +11,6 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ServerNpcLoot;
-import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemStack;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -31,9 +30,6 @@ public class BingoLootLoggerPlugin extends Plugin
 
 	@Inject
 	private BingoLootLoggerConfig config;
-
-	@Inject
-	private ItemManager itemManager;
 
 	@Override
 	protected void startUp() throws Exception
@@ -87,18 +83,13 @@ public class BingoLootLoggerPlugin extends Plugin
 					"",
 					"You received: <col=ff0000>" + getItemName(bingoItemId) +
 							"</col> from: <col=ff0000>" + npcName +
-							"</col> worth: <col=ff0000>" + getItemPrice(bingoItemId) +
-							"</col> gp",
+							"</col>",
 					null
 			);
 		}
 	}
 	private Collection<ItemStack> getItemStack(ServerNpcLoot event) {
 		return event.getItems();
-	}
-
-	private int getItemPrice(int itemId) {
-		return itemManager.getItemPrice(itemId);
 	}
 
 	public String getItemName(int itemId) {
