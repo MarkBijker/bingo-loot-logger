@@ -15,11 +15,9 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemStack;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.util.Text;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -68,10 +66,12 @@ public class BingoLootLoggerPlugin extends Plugin
 	public void onServerNpcLoot(ServerNpcLoot event)
 	{
 		Collection<ItemStack> itemStack = getItemStack(event);
-		List<String> bingoItemList = Text.fromCSV(config.BingoItemList());
+		List<BingoItemRule> bingoItemRules = BingoItemRule.parse(config.BingoItemList());
+		String npcName = event.getComposition().getName();
 
 		List<ItemStack> bingoItems = itemStack.stream()
-				.filter(item -> bingoItemList.contains(getItemName(item.getId())))
+				.filter(item -> bingoItemRules.stream()
+						.anyMatch(rule -> rule.matches(getItemName(item.getId()), npcName)))
 				.collect(Collectors.toList());
 		if (!bingoItems.isEmpty()) sendBingoLootMessage(event, bingoItems);
 	}
@@ -96,6 +96,7 @@ public class BingoLootLoggerPlugin extends Plugin
 	private Collection<ItemStack> getItemStack(ServerNpcLoot event) {
 		return event.getItems();
 	}
+
 	private int getItemPrice(int itemId) {
 		return itemManager.getItemPrice(itemId);
 	}
