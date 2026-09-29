@@ -6,8 +6,6 @@ import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.events.GameStateChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ServerNpcLoot;
@@ -34,22 +32,13 @@ public class BingoLootLoggerPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		log.debug("Example started!");
+		log.debug("Bingo loot logger started");
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
-		log.debug("Example stopped!");
-	}
-
-	@Subscribe
-	public void onGameStateChanged(GameStateChanged gameStateChanged)
-	{
-		if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
-		{
-			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Example says " + config.greeting(), null);
-		}
+		log.debug("Bingo loot logger stopped");
 	}
 
 	@Provides
@@ -63,20 +52,28 @@ public class BingoLootLoggerPlugin extends Plugin
 	{
 		Collection<ItemStack> itemStack = getItemStack(event);
 		List<BingoItemRule> bingoItemRules = BingoItemRule.parse(config.BingoItemList());
-		String npcName = event.getComposition().getName();
+		if (itemStack == null || bingoItemRules.isEmpty())
+		{
+			return;
+		}
 
+		String npcName = event.getComposition() == null ? null : event.getComposition().getName();
 		List<ItemStack> bingoItems = itemStack.stream()
 				.filter(item -> bingoItemRules.stream()
 						.anyMatch(rule -> rule.matches(getItemName(item.getId()), npcName)))
 				.collect(Collectors.toList());
-		if (!bingoItems.isEmpty()) sendBingoLootMessage(event, bingoItems);
+		if (!bingoItems.isEmpty())
+		{
+			sendBingoLootMessage(event, bingoItems);
+		}
 	}
 
-	private void sendBingoLootMessage(ServerNpcLoot event, List<ItemStack> bingoItems) {
-		String npcName = event.getComposition().getName();
+	private void sendBingoLootMessage(ServerNpcLoot event, List<ItemStack> bingoItems)
+	{
+		String npcName = event.getComposition() == null ? "unknown" : event.getComposition().getName();
 
-		// TODO: Potentially add "M" or "K" abbreviations to the ItemPrice
-		for (ItemStack bingoItem : bingoItems) {
+		for (ItemStack bingoItem : bingoItems)
+		{
 			int bingoItemId = bingoItem.getId();
 			client.addChatMessage(
 					ChatMessageType.GAMEMESSAGE,
@@ -88,12 +85,19 @@ public class BingoLootLoggerPlugin extends Plugin
 			);
 		}
 	}
-	private Collection<ItemStack> getItemStack(ServerNpcLoot event) {
-		return event.getItems();
+
+	private Collection<ItemStack> getItemStack(ServerNpcLoot event)
+	{
+		return event == null ? null : event.getItems();
 	}
 
-	public String getItemName(int itemId) {
-		return client.getItemDefinition(itemId).getName();
+	public String getItemName(int itemId)
+	{
+		if (itemId <= 0)
+		{
+			return "";
+		}
+		String itemName = client.getItemDefinition(itemId).getName();
+		return itemName == null ? "" : itemName;
 	}
-
 }

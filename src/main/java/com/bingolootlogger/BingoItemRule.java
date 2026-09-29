@@ -2,7 +2,6 @@ package com.bingolootlogger;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 final class BingoItemRule
 {
@@ -47,12 +46,26 @@ final class BingoItemRule
 
 	boolean matches(String lootItemName, String lootNpcName)
 	{
+		if (lootItemName == null || itemName == null)
+		{
+			return false;
+		}
+
 		if (!itemName.equalsIgnoreCase(lootItemName.trim()))
 		{
 			return false;
 		}
 
-		return npcName == null || npcName.toLowerCase(Locale.ROOT)
-				.equals(lootNpcName.trim().toLowerCase(Locale.ROOT));
+		if (npcName == null)
+		{
+			return true;
+		}
+
+		if (lootNpcName == null)
+		{
+			return false;
+		}
+
+		return npcName.equalsIgnoreCase(lootNpcName.trim());
 	}
 }

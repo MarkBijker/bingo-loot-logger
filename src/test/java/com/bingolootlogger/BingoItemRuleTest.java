@@ -40,4 +40,12 @@ public class BingoItemRuleTest
 		assertTrue(rules.get(2).matches("Dragon axe", "Dagannoth Kings"));
 		assertFalse(rules.get(2).matches("Dragon axe", "Giant Mole"));
 	}
+
+	@Test
+	public void rejectsNullNpcNameWhenRuleRequiresOne()
+	{
+		List<BingoItemRule> rules = BingoItemRule.parse("Rune battleaxe: Giant Mole");
+
+		assertFalse(rules.get(0).matches("Rune battleaxe", null));
+	}
 }
